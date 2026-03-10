@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RXN COIN · Farm & Earn</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tonweb@0.0.58/dist/tonweb.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.1/dist/web3.min.js"></script>
+    <script>
+        // URL'den start parametresini al ve localStorage'a kaydet
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const startParam = urlParams.get('start');
+            if (startParam && startParam.startsWith('ref_')) {
+                localStorage.setItem('pending_referrer', startParam.replace('ref_', ''));
+                console.log('Referrer ID saved:', startParam.replace('ref_', ''));
+            }
+        })();
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header with User Info -->
+        <header class="glass-header">
+            <div class="user-profile">
+                <div class="avatar" id="userAvatar">
+                    <span id="userInitials">U</span>
+                </div>
+                <div class="user-info">
+                    <span class="username" id="usernameDisplay">@username</span>
+                    <span class="user-id" id="userIdDisplay">ID: 123456</span>
+                </div>
+            </div>
+            <div class="rxn-balance" id="rxnBalanceContainer">
+                <div class="balance-icon">⚡</div>
+                <div class="balance-value" id="rxnBalance">0</div>
+                <span class="balance-label">RXN</span>
+            </div>
+        </header>
+
+        <!-- Main Content Area (Scrollable) -->
+        <div class="content-area" id="contentArea">
+            <!-- Home Section -->
+            <div class="section home-section" id="homeSection">
+                <div class="farm-container">
+                    <div class="farm-card">
+                        <div class="farm-header">
+                            <h2>Farm RXN</h2>
+                            <div class="next-farm" id="nextFarmTimer">04:00:00</div>
+                        </div>
+                        
+                        <div class="farm-progress">
+                            <div class="progress-bar" id="farmProgress" style="width: 0%"></div>
+                        </div>
+
+                        <button class="farm-button" id="farmButton">
+                            <span class="button-glow"></span>
+                            <span class="button-text">START FARM</span>
+                        </button>
+
+                        <div class="farm-stats">
+                            <div class="stat">
+                                <span class="stat-label">Hourly Rate</span>
+                                <span class="stat-value" id="hourlyRate">10</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Daily Max</span>
+                                <span class="stat-value" id="dailyMax">240</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boost Section -->
+                    <div class="boost-section">
+                        <h3>⚡ Boost Farm Level</h3>
+                        <div class="boost-grid" id="boostGrid"></div>
+                    </div>
+
+                    <!-- Wallet Section -->
+                    <div class="wallet-section">
+                        <h3>🔗 Connected Wallets</h3>
+                        <div class="wallet-balances" id="walletBalances"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earn Section -->
+            <div class="section earn-section hidden" id="earnSection">
+                <h2>💰 Earn More RXN</h2>
+                
+                <div class="earn-card">
+                    <h3>Daily Tasks</h3>
+                    <div class="task-list" id="dailyTasks"></div>
+                </div>
+
+                <div class="earn-card">
+                    <h3>Special Events</h3>
+                    <div class="event-list" id="specialEvents"></div>
+                </div>
+            </div>
+
+            <!-- Top Section -->
+            <div class="section top-section hidden" id="topSection">
+                <h2>🏆 Top Farmers</h2>
+                <div class="leaderboard-tabs">
+                    <button class="tab-btn active" data-period="daily">Daily</button>
+                    <button class="tab-btn" data-period="weekly">Weekly</button>
+                    <button class="tab-btn" data-period="alltime">All Time</button>
+                </div>
+                
+                <div class="leaderboard-list" id="leaderboardList">
+                    <div class="loading">Loading leaderboard...</div>
+                </div>
+                
+                <div class="user-rank" id="userRank">Your Rank: --</div>
+            </div>
+
+            <!-- Friends Section -->
+            <div class="section friends-section hidden" id="friendsSection">
+                <h2>👥 Friends & Referrals</h2>
+                
+                <div class="referral-card">
+                    <div class="referral-stats">
+                        <div class="stat">
+                            <span class="stat-label">Total Referrals</span>
+                            <span class="stat-value" id="totalReferrals">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Referral Bonus</span>
+                            <span class="stat-value" id="referralBonus">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="referral-link-container">
+                        <input type="text" id="referralLinkInput" readonly>
+                        <button class="copy-btn" onclick="copyReferralLink()">Copy</button>
+                    </div>
+                    
+                    <div class="referral-list" id="referralList">
+                        <div class="loading">No referrals yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token Section -->
+            <div class="section token-section hidden" id="tokenSection">
+                <div class="token-header">
+                    <h2>$RXN Token</h2>
+                    <div class="token-price">$0.0012</div>
+                </div>
+
+                <div class="token-roadmap">
+                    <h3>Roadmap</h3>
+                    <div class="roadmap-item completed">
+                        <span class="roadmap-phase">Phase 1</span>
+                        <span class="roadmap-desc">Telegram Mini App Launch</span>
+                    </div>
+                    <div class="roadmap-item completed">
+                        <span class="roadmap-phase">Phase 2</span>
+                        <span class="roadmap-desc">50,000 Active Farmers</span>
+                    </div>
+                    <div class="roadmap-item active">
+                        <span class="roadmap-phase">Phase 3</span>
+                        <span class="roadmap-desc">Boost System & Referrals</span>
+                    </div>
+                    <div class="roadmap-item">
+                        <span class="roadmap-phase">Phase 4</span>
+                        <span class="roadmap-desc">Wallet Integration</span>
+                    </div>
+                    <div class="roadmap-item">
+                        <span class="roadmap-phase">Phase 5</span>
+                        <span class="roadmap-desc">$RXN Token Airdrop</span>
+                    </div>
+                    <div class="roadmap-item">
+                        <span class="roadmap-phase">Phase 6</span>
+                        <span class="roadmap-desc">DEX Listing & Trading</span>
+                    </div>
+                </div>
+
+                <div class="token-utility">
+                    <h3>Token Utility</h3>
+                    <ul>
+                        <li>🎮 In-game purchases with $RXN</li>
+                        <li>⚡ Boost your farm earnings</li>
+                        <li>🎁 Exclusive airdrops</li>
+                        <li>💎 Governance voting rights</li>
+                    </ul>
+                </div>
+
+              <!-- Token section içinde butonlar -->
+                <div class="airdrop-section">
+                    <h3>🚀 Airdrop Registration</h3>
+                    <button class="wallet-connect-btn" id="connectTonBtn">
+                        <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" alt="TON" class="wallet-icon">
+                        Connect TON Wallet
+                    </button>
+                    <button class="wallet-connect-btn" id="connectEthBtn">
+                        <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" alt="ETH" class="wallet-icon">
+                        Connect Ethereum Wallet
+                    </button>
+                    <button class="wallet-connect-btn" id="connectEmailBtn">
+                        <img src="https://cdn-icons-png.flaticon.com/512/542/542638.png" alt="Email" class="wallet-icon">
+                        Submit Email
+                    </button>
+                    
+                    <div class="connected-addresses" id="connectedAddresses">
+                        No wallets connected yet
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation (Fixed) -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-section="home">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" data-section="earn">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">Earn</span>
+            </button>
+            <button class="nav-item" data-section="top">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Top</span>
+            </button>
+            <button class="nav-item" data-section="friends">
+                <span class="nav-icon">👥</span>
+                <span class="nav-label">Friends</span>
+            </button>
+            <button class="nav-item" data-section="token">
+                <span class="nav-icon">🪙</span>
+                <span class="nav-label">Token</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
